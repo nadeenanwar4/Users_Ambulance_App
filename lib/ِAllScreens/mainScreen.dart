@@ -1,16 +1,21 @@
 import 'dart:async';
+import 'package:animated_text_kit/animated_text_kit.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:users_ambulance_app/%D9%90AllScreens/loginScreen.dart';
 import 'package:users_ambulance_app/%D9%90AllScreens/searchScreen.dart';
 import 'package:users_ambulance_app/AllWidgets/Divider.dart';
 import 'package:users_ambulance_app/AllWidgets/progressDialog.dart';
 import 'package:users_ambulance_app/Assistants/assistantMethods.dart';
 import 'package:users_ambulance_app/DataHandler/appData.dart';
 import 'package:users_ambulance_app/Models/directionDetails.dart';
+import 'package:users_ambulance_app/configMaps.dart';
 
 class MainScreen extends StatefulWidget
 {
@@ -42,15 +47,90 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin
   Set<Circle> circlesSet = {};
 
   double rideDetailsContainerHeight = 0;
+  double requestRideContainerHeight = 0;
   double searchContainerHeight = 300.0;
 
   bool drawerOpen = true;
+  late DatabaseReference rideRequestRef;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    AssistantMethods.getCurrentOnlineUserInfo();
+  }
+
+  // a method to save the user info along with the ride request info to the database
+  void saveRideRequest()
+  {
+    //create a node in the database to store all the ride requests from the users side
+    rideRequestRef = FirebaseDatabase.instance.ref().child("Ride Requests").push();
+
+    var pickUp = Provider.of<AppData>(context, listen: false).pickUpLocation;
+    var dropOff = Provider.of<AppData>(context, listen: false).dropOffLocation;
+
+
+    Map pickUpLocMap =
+    {
+      "latitude": pickUp!.latitude.toString(),
+      "longitude": pickUp!.latitude.toString(),
+    };
+
+    Map dropOffLocMap =
+    {
+      "latitude": dropOff!.latitude.toString(),
+      "longitude": dropOff!.latitude.toString(),
+    };
+
+    Map rideInfoMap =
+    {
+      "driver_id": "waiting",
+      //"payment_method": "cash",
+      "pickup": pickUpLocMap,
+      "dropoff": dropOffLocMap,
+      "created_at": DateTime.now().toString(),
+      "rider_name": userCurrentInfo!.name,
+      "rider_phone": userCurrentInfo!.phone,
+      "pickup_address": pickUp.placeName,
+      "dropoff_address": dropOff.placeName,
+    };
+
+    //store this information to database
+    rideRequestRef!.set(rideInfoMap);
+  }
+
+  // a method to remove the request ride info from the database
+  void cancelRideRequest()
+  {
+    rideRequestRef!.remove();
+  }
+
+
+  void displayRequestRideContainer()
+  {
+    setState(() {
+      requestRideContainerHeight = 250.0;
+      rideDetailsContainerHeight = 0;
+      bottomPaddingOfMap = 230;
+      drawerOpen = true;
+    });
+
+    saveRideRequest();
+  }
+
+
+
+
+
+
 
   resetApp(){
     setState(() {
       drawerOpen = true;
       searchContainerHeight = 300.0;
       rideDetailsContainerHeight = 0;
+      requestRideContainerHeight = 0;
       bottomPaddingOfMap = 230;
 
       polylineSet.clear();
@@ -148,6 +228,17 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin
               ListTile(
                 leading: Icon(Icons.info),
                 title: Text("About", style: TextStyle(fontSize: 15.0),),
+              ),
+              GestureDetector(
+                onTap: ()
+                {
+                  FirebaseAuth.instance.signOut();
+                  Navigator.push(context, MaterialPageRoute(builder: (c)=> LoginScreen()));
+                },
+                child: ListTile(
+                  leading: Icon(Icons.info),
+                  title: Text("Sign Out", style: TextStyle(fontSize: 15.0),),
+                ),
               ),
 
 
@@ -410,7 +501,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin
                           ),
                            onPressed: ()
                             {
-                              print("clicked");
+                              displayRequestRideContainer();
                             },
                           child: Padding(
                             padding: EdgeInsets.all(18.0),
@@ -426,6 +517,85 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin
                       ),
                     ],
                   ),
+                ),
+              ),
+            ),
+          ),
+
+          Positioned(
+            bottom: 0.0,
+            left: 0.0,
+            right: 0.0,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.only(topLeft: Radius.circular(16.0), topRight: Radius.circular(16.0), ),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    spreadRadius: 0.5,
+                    blurRadius: 16.0,
+                    color: Colors.black54,
+                    offset: Offset(0.7, 0.7),
+                  ),
+                ],
+              ),
+              height: requestRideContainerHeight,
+              child: Padding(
+                padding: const EdgeInsets.all(30.0),
+                child: Column(
+                  children: [
+                    SizedBox(height: 12.0,),
+
+                    SizedBox(
+                        width: double.infinity,
+                        child: DefaultTextStyle(
+                          style: const TextStyle(
+                             fontSize: 25.0,
+                            color: Colors.red,
+                          ),
+                          textAlign: TextAlign.center,
+                          child: AnimatedTextKit(
+                            animatedTexts: [
+                              WavyAnimatedText('Requesting an Ambulance...'),
+                              WavyAnimatedText('Please Wait...'),
+                              WavyAnimatedText('Finding a Driver...'),
+                            ],
+                            isRepeatingAnimation: true,
+                            onTap: () {
+                              print("Tap Event");
+                            },
+                         ),
+                       ),
+                     ),
+                    SizedBox(height: 25.0,),
+
+                    GestureDetector(
+                      onTap: ()
+                      {
+                        cancelRideRequest();
+                        resetApp();
+                      },
+                      child: Container(
+                        height: 60.0,
+                        width: 60.0,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(26.0),
+                          border: Border.all(width: 2.0, color: Colors.black),
+                        ),
+                        child: Icon(Icons.close, size: 26.0,),
+                      ),
+                    ),
+                    SizedBox(height: 7.0,),
+                    Container(
+                      width: double.infinity,
+                      child: Text(
+                        "Cancel Request",
+                         textAlign: TextAlign.center,
+                         style: TextStyle(fontSize: 12.0,),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

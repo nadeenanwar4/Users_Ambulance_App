@@ -4,6 +4,7 @@ import 'package:users_ambulance_app/%D9%90AllScreens/loginScreen.dart';
 
 class MySplashScreen extends StatefulWidget
 {
+
   const MySplashScreen({Key? key}) : super(key: key);
 
   @override
