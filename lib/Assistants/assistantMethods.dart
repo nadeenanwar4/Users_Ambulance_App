@@ -1,10 +1,12 @@
+import 'dart:math';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:users_ambulance_app/Assistants/requestAssistant.dart';
-import 'package:users_ambulance_app/DataHandler/appData.dart';
+import 'package:users_ambulance_app/Controller/appData.dart';
 import 'package:users_ambulance_app/Models/address.dart';
 import 'package:users_ambulance_app/Models/allUsers.dart';
 import 'package:users_ambulance_app/Models/directionDetails.dart';
@@ -82,6 +84,12 @@ class AssistantMethods
 
     });
 
+  }
+  static double createRandomNumber(int num)
+  {
+    var random = Random();
+    int radNumber = random.nextInt(num);
+    return radNumber.toDouble();
   }
 
 

@@ -3,11 +3,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:users_ambulance_app/%D9%90AllScreens/loginScreen.dart';
-import 'package:users_ambulance_app/%D9%90AllScreens/mainScreen.dart';
-import 'package:users_ambulance_app/%D9%90AllScreens/registerationScreen.dart';
-import 'package:users_ambulance_app/%D9%90AllScreens/splash_screen.dart';
-import 'package:users_ambulance_app/DataHandler/appData.dart';
+import 'package:users_ambulance_app/View/loginScreen.dart';
+import 'package:users_ambulance_app/View/mainScreen.dart';
+import 'package:users_ambulance_app/View/registerationScreen.dart';
+import 'package:users_ambulance_app/View/splash_screen.dart';
+import 'package:users_ambulance_app/Controller/appData.dart';
 
 void main() async
 {
